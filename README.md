@@ -102,17 +102,19 @@ You speak naturally, and everything happens automatically:
 
 ## 🚀 One-Command Install
 
+> **👋 New to this?** See the [Beginner Installation Guide](INSTALL.md) — step-by-step with explanations, troubleshooting, and FAQs.
+
 ### Windows (PowerShell)
 ```powershell
-git clone https://github.com/shouryavarma/agent-arsenal.git
-cd agent-arsenal
+git clone https://github.com/shouryavarma/agent-arsenal-v2.git
+cd agent-arsenal-v2
 .\install.ps1
 ```
 
 ### macOS / Linux (bash)
 ```bash
-git clone https://github.com/shouryavarma/agent-arsenal.git
-cd agent-arsenal
+git clone https://github.com/shouryavarma/agent-arsenal-v2.git
+cd agent-arsenal-v2
 bash ./install.sh --target claude --modules all
 ```
 
