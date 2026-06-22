@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NovaCalc — Scientific Calculator 2026</title>
+<meta name="description" content="Futuristic scientific calculator for students, engineers, and professionals.">
+<meta name="theme-color" content="#080c18">
+<style>
+/* ============================================================
+   DESIGN SYSTEM
+   ============================================================ */
+:root {
+  --bg-deep: #080c18;
+  --bg-surface: #0c1120;
+  --bg-surface2: #111830;
+  --bg-card: #141c38;
+  --bg-elevated: #1a2345;
+  --glass-bg: rgba(12,17,32,0.75);
+  --glass-border: rgba(255,255,255,0.06);
+  --accent-1: #6c5ce7;
+  --accent-2: #a29bfe;
+  --accent-glow: rgba(108,92,231,0.3);
+  --accent-gradient: linear-gradient(135deg,#6c5ce7,#a29bfe);
+  --cyan: #00cec9;
+  --cyan-glow: rgba(0,206,201,0.2);
+  --pink: #fd79a8;
+  --orange: #fdcb6e;
+  --red: #ff6b6b;
+  --green: #55efc4;
+  --blue: #74b9ff;
+  --text-primary: #eef0ff;
+  --text-secondary: rgba(238,240,255,0.55);
+  --text-tertiary: rgba(238,240,255,0.3);
+  --fn-trig: #a29bfe;
+  --fn-log: #00cec9;
+  --fn-pwr: #fdcb6e;
+  --fn-mem: #74b9ff;
+  --fn-const: #fd79a8;
+  --radius-sm: 7px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  --shadow-btn: 0 2px 8px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-btn-hover: 0 4px 16px rgba(108,92,231,0.18), 0 0 0 1px rgba(108,92,231,0.12);
+  --shadow-elevated: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  --shadow-glow: 0 0 40px rgba(108,92,231,0.12);
+  --font-ui: system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono: 'Cascadia Code','JetBrains Mono','Fira Code',monospace;
+  --ease-out: cubic-bezier(0.16,1,0.3,1);
+  --ease-bounce: cubic-bezier(0.34,1.56,0.64,1);
+  --dur-fast: 130ms;
+  --dur-norm: 250ms;
+  --dur-slow: 400ms;
+  --z-drawer: 10;
+  --z-modal: 20;
+  --z-toast: 30;
+  --z-splash: 50;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:var(--font-ui);
+  background:var(--bg-deep);
+  color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;
+  user-select:none;
+}
+button{border:none;background:none;color:inherit;font:inherit;cursor:pointer;outline:none}
+button:focus-visible{outline:2px solid var(--accent-1);outline-offset:2px;border-radius:var(--radius-sm)}
+input,select{font:inherit;color:inherit;background:none;border:none;outline:none}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:var(--radius-full)}
+
+/* Splash */
+#splash{position:fixed;inset:0;z-index:var(--z-splash);background:var(--bg-deep);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s var(--ease-out)}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-logo{font-size:clamp(44px,5.5vw,72px);font-weight:800;letter-spacing:-.03em;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.splash-sub{color:var(--text-secondary);font-size:clamp(12px,1.1vw,15px);margin-top:6px;letter-spacing:.3em;text-transform:uppercase}
+.splash-dots{display:flex;gap:5px;margin-top:36px}
+.splash-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-1);animation:sDot 1.4s var(--ease-out) infinite both}
+.splash-dot:nth-child(2){animation-delay:.18s}
+.splash-dot:nth-child(3){animation-delay:.36s}
+.splash-dot:nth-child(4){animation-delay:.54s}
+@keyframes sDot{0%,80%,100%{transform:scale(.4);opacity:.3}40%{transform:scale(1);opacity:1;background:var(--accent-2)}}
+.splash-ver{position:absolute;bottom:clamp(16px,2.5vh,32px);color:var(--text-tertiary);font-size:10px;letter-spacing:.05em}
+
+/* Loader */
+#loader{position:fixed;inset:0;z-index:49;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:var(--bg-deep);transition:opacity .4s var(--ease-out)}
+#loader.hide{opacity:0;pointer-events:none}
+.loader-track{width:clamp(180px,28vw,320px);height:3px;background:rgba(255,255,255,.05);border-radius:var(--radius-full);overflow:hidden}
+.loader-bar{height:100%;width:0%;background:var(--accent-gradient);border-radius:var(--radius-full);transition:width .25s var(--ease-out)}
+.loader-lbl{color:var(--text-tertiary);font-size:11px;letter-spacing:.05em}
+.loader-step{color:var(--text-secondary);font-size:12px}
+
+/* App */
+#app{display:none;width:100%;height:100vh;height:100dvh;background:var(--bg-deep);overflow:hidden;flex-direction:column}
+#app.active{display:flex}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:5px 14px;height:40px;background:var(--glass-bg);border-bottom:1px solid var(--glass-border);flex-shrink:0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.topbar-l{display:flex;align-items:center;gap:10px}
+.topbar-title{font-size:13px;font-weight:700;letter-spacing:-.02em}
+.topbar-title span{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-badge{font-size:8px;padding:2px 5px;border-radius:var(--radius-full);background:rgba(255,255,255,.05);color:var(--text-tertiary);border:1px solid rgba(255,255,255,.04)}
+.topbar-actions{display:flex;align-items:center;gap:3px}
+.topbar-btn{width:30px;height:30px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);transition:all var(--dur-fast) var(--ease-out)}
+.topbar-btn:hover{background:rgba(255,255,255,.06);color:var(--text-primary)}
+.icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* Main Layout - Landscape First */
+.calc-wrap{flex:1;display:grid;grid-template-columns:minmax(240px,30vw) 1fr;overflow:hidden}
+@media(max-width:820px){.calc-wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+/* Display */
+.display-area{
+  display:flex;flex-direction:column;padding:18px 16px;gap:10px;
+  background:linear-gradient(180deg,var(--bg-surface),var(--bg-deep));
+  border-right:1px solid var(--glass-border);position:relative;overflow:hidden;
+  min-height:0;
+}
+.display-area::before{content:'';position:absolute;top:-40%;right:-40%;width:80%;height:80%;
+  background:radial-gradient(circle,var(--accent-glow),transparent 70%);
+  pointer-events:none;opacity:.25}
+.mode-strip{display:flex;gap:5px;flex-wrap:wrap;z-index:1}
+.mode-chip{font-size:9px;padding:2px 9px;border-radius:var(--radius-full);
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.04);
+  color:var(--text-tertiary);cursor:default;transition:all var(--dur-fast) var(--ease-out);letter-spacing:.03em}
+.mode-chip.active{background:rgba(108,92,231,.12);border-color:var(--accent-1);color:var(--accent-2)}
+.mode-chip.tog{cursor:pointer}
+.mode-chip.tog:hover{border-color:var(--accent-1);color:var(--text-primary)}
+.mode-dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
+.mode-dot.deg{background:var(--cyan)}
+.mode-dot.rad{background:var(--orange)}
+.expr-area{flex:1;display:flex;flex-direction:column;justify-content:flex-end;z-index:1;min-height:0}
+.expr-in{font-family:var(--font-mono);font-size:clamp(16px,1.5vw,22px);color:var(--text-primary);text-align:right;
+  word-break:break-all;overflow-y:auto;padding:6px 0;line-height:1.45;max-height:clamp(70px,7vh,100px);scrollbar-width:thin}
+.expr-out{font-family:var(--font-mono);font-size:clamp(30px,3vw,44px);font-weight:700;text-align:right;
+  color:var(--accent-2);padding:3px 0;line-height:1.2;transition:color var(--dur-fast);word-break:break-all}
+.expr-out.error{color:var(--red)}
+.expr-out.inf{color:var(--orange)}
+.expr-sub{font-size:clamp(10px,.8vw,12px);color:var(--text-tertiary);text-align:right;min-height:1.3em;padding:2px 0;font-family:var(--font-mono)}
+.mem-badge{position:absolute;top:14px;right:14px;font-size:8px;padding:2px 7px;border-radius:var(--radius-full);
+  background:rgba(116,185,255,.08);color:var(--fn-mem);border:1px solid rgba(116,185,255,.12);
+  opacity:0;transition:opacity var(--dur-norm);z-index:2}
+.mem-badge.show{opacity:1}
+
+/* Buttons */
+.btn-area{padding:10px;display:flex;flex-direction:column;gap:5px;overflow-y:auto;min-width:0}
+.btn-row{display:flex;gap:5px;flex-shrink:0}
+.btn{
+  flex:1;min-width:0;
+  font-size:clamp(10px,.75vw,12px);font-weight:600;
+  padding:clamp(3px,.4vh,7px) clamp(5px,.5vw,10px);
+  border-radius:var(--radius-sm);
+  background:var(--bg-surface2);border:1px solid var(--glass-border);
+  color:var(--text-primary);box-shadow:var(--shadow-btn);
+  display:flex;align-items:center;justify-content:center;gap:2px;
+  white-space:nowrap;transition:all var(--dur-fast) var(--ease-out);
+  min-height:clamp(30px,3.8vh,42px);
+}
+.btn:hover{background:var(--bg-elevated);border-color:rgba(255,255,255,.07);box-shadow:var(--shadow-btn-hover);transform:translateY(-1px)}
+.btn:active{transform:scale(.95);background:var(--bg-card)}
+.btn-num{font-size:clamp(12px,.9vw,15px);font-weight:700;background:var(--bg-card)}
+.btn-num:hover{background:var(--bg-elevated)}
+.btn-op{color:var(--cyan);background:rgba(0,206,201,.05);border-color:rgba(0,206,201,.08)}
+.btn-op:hover{background:rgba(0,206,201,.1);border-color:rgba(0,206,201,.16)}
+.btn-eq{background:var(--accent-gradient);color:var(--bg-deep);border-color:transparent;font-weight:800;font-size:clamp(14px,1.1vw,19px)}
+.btn-eq:hover{box-shadow:0 4px 24px var(--accent-glow);transform:translateY(-2px);border-color:transparent}
+.btn-clr{color:var(--red);background:rgba(255,107,107,.045);border-color:rgba(255,107,107,.08)}
+.btn-clr:hover{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.16)}
+.btn-fn{color:var(--fn-trig);background:rgba(162,155,254,.035);border-color:rgba(162,155,254,.05);font-size:clamp(9px,.7vw,11px)}
+.btn-fn:hover{background:rgba(162,155,254,.08);border-color:rgba(162,155,254,.12)}
+.btn-lg{color:var(--fn-log);background:rgba(0,206,201,.035);border-color:rgba(0,206,201,.05);font-size:clamp(9px,.7vw,11px)}
+.btn-lg:hover{background:rgba(0,206,201,.08);border-color:rgba(0,206,201,.12)}
+.btn-pw{color:var(--fn-pwr);background:rgba(253,203,110,.035);border-color:rgba(253,203,110,.05)}
+.btn-pw:hover{background:rgba(253,203,110,.08);border-color:rgba(253,203,110,.12)}
+.btn-me{color:var(--fn-mem);background:rgba(116,185,255,.045);border-color:rgba(116,185,255,.06);font-size:clamp(8px,.65vw,10px)}
+.btn-me:hover{background:rgba(116,185,255,.09);border-color:rgba(116,185,255,.13)}
+.btn-cn{color:var(--fn-const);background:rgba(253,121,168,.035);border-color:rgba(253,121,168,.05)}
+.btn-cn:hover{background:rgba(253,121,168,.08);border-color:rgba(253,121,168,.12)}
+.btn-bs{color:var(--orange);background:rgba(253,203,110,.045);border-color:rgba(253,203,110,.08)}
+.btn-bs:hover{background:rgba(253,203,110,.1);border-color:rgba(253,203,110,.16)}
+.kbd{font-size:7px;color:var(--text-tertiary);opacity:.4;margin-left:1px}
+
+/* Drawer */
+.drawer-overlay{position:fixed;inset:0;z-index:var(--z-drawer);background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity var(--dur-norm) var(--ease-out)}
+.drawer-overlay.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:clamp(300px,32vw,440px);z-index:var(--z-drawer);
+  background:var(--bg-surface);border-left:1px solid var(--glass-border);
+  transform:translateX(100%);transition:transform var(--dur-slow) var(--ease-out);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-elevated)}
+.drawer.open{transform:translateX(0)}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--glass-border);flex-shrink:0}
+.drawer-title{font-size:15px;font-weight:700}
+.drawer-body{flex:1;overflow-y:auto;padding:14px 20px}
+
+/* History */
+.hist-item{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.025);cursor:pointer;border-radius:var(--radius-sm);transition:background var(--dur-fast) var(--ease-out)}
+.hist-item:hover{background:rgba(255,255,255,.025)}
+.hist-expr{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)}
+.hist-res{font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--accent-2);margin-top:3px}
+.hist-time{font-size:9px;color:var(--text-tertiary);margin-top:3px}
+.hist-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 20px;text-align:center}
+.hist-empty svg{width:40px;height:40px;color:var(--text-tertiary);opacity:.25}
+.hist-empty p{color:var(--text-tertiary);font-size:13px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;z-index:var(--z-modal);display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity var(--dur-norm) var(--ease-out);padding:20px}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--bg-surface);border:1px solid var(--glass-border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-elevated),var(--shadow-glow);width:100%;max-width:500px;
+  max-height:80vh;overflow-y:auto;transform:scale(.92) translateY(16px);transition:transform var(--dur-slow) var(--ease-out)}
+.modal-overlay.open .modal{transform:scale(1) translateY(0)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--glass-border)}
+.modal-title{font-size:15px;font-weight:700}
+.modal-close{width:30px;height:30px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-secondary)}
+.modal-close:hover{background:rgba(255,255,255,.06);color:var(--text-primary)}
+.modal-body{padding:20px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--glass-border)}
+
+/* Settings */
+.set-grp{margin-bottom:20px}
+.set-grp-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-secondary);margin-bottom:10px}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.025)}
+.set-lbl{font-size:13px}
+.set-desc{font-size:10px;color:var(--text-tertiary);margin-top:2px}
+.toggle{width:38px;height:20px;border-radius:var(--radius-full);background:rgba(255,255,255,.08);position:relative;cursor:pointer;transition:background var(--dur-fast) var(--ease-out);flex-shrink:0}
+.toggle.on{background:var(--accent-1)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform var(--dur-fast) var(--ease-out);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{transform:translateX(18px)}
+.sel{background:var(--bg-card);border:1px solid var(--glass-border);border-radius:var(--radius-sm);padding:5px 10px;color:var(--text-primary);font-size:12px;cursor:pointer}
+
+/* Help */
+.help h3{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--accent-2)}
+.help p{font-size:12px;color:var(--text-secondary);line-height:1.55;margin-bottom:8px}
+.help kbd{display:inline-block;padding:1px 5px;border-radius:3px;background:var(--bg-card);border:1px solid var(--glass-border);font-family:var(--font-mono);font-size:10px;color:var(--text-primary);margin:0 1px}
+.help-s{margin-bottom:20px}
+
+/* About */
+.ab-v{font-size:44px;font-weight:800;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+.ab-s{color:var(--text-secondary);font-size:13px;text-align:center;margin-top:4px}
+.ab-i{text-align:center;margin-top:16px}
+.ab-i p{font-size:12px;color:var(--text-tertiary);margin-bottom:5px}
+.ab-c{margin-top:16px;padding-top:14px;border-top:1px solid var(--glass-border);font-size:11px;color:var(--text-tertiary);text-align:center}
+
+/* Special modals */
+.sp-card{text-align:center;padding:20px}
+.sp-card h2{font-size:22px;margin-bottom:10px}
+.sp-card p{color:var(--text-secondary);font-size:13px;margin-bottom:20px;line-height:1.5}
+.fl-steps{display:flex;gap:14px;margin:16px 0;flex-wrap:wrap;justify-content:center}
+.fl-step{flex:1;min-width:120px;max-width:180px;padding:14px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--glass-border);text-align:center}
+.fl-sn{width:24px;height:24px;border-radius:50%;background:var(--accent-gradient);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:700;font-size:12px;color:var(--bg-deep)}
+.fl-st{font-weight:600;font-size:12px;margin-bottom:3px}
+.fl-sd{font-size:10px;color:var(--text-tertiary)}
+
+/* Toast */
+#toastC{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:var(--z-toast);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.toast{padding:9px 18px;border-radius:var(--radius-md);background:var(--bg-surface);border:1px solid var(--glass-border);box-shadow:var(--shadow-elevated);font-size:12px;pointer-events:auto;animation:tIn .25s var(--ease-out);display:flex;align-items:center;gap:7px}
+.toast.inf{border-left:3px solid var(--accent-1)}
+.toast.ok{border-left:3px solid var(--green)}
+.toast.err{border-left:3px solid var(--red)}
+@keyframes tIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* AD placeholders */
+.ad{background:rgba(255,255,255,.015);border:1px dashed rgba(255,255,255,.04);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);font-size:10px;gap:6px;flex-shrink:0}
+.ad svg{width:14px;height:14px;opacity:.25}
+
+/* Info bar */
+.info-bar{display:flex;align-items:center;justify-content:space-between;padding:3px 14px;background:rgba(0,0,0,.15);border-top:1px solid var(--glass-border);font-size:9px;color:var(--text-tertiary);flex-shrink:0;height:24px}
+.info-bar-l,.info-bar-r{display:flex;align-items:center;gap:10px}
+
+/* Responsive */
+@media(max-width:820px){
+  .display-area{border-right:none;border-bottom:1px solid var(--glass-border);padding:12px;max-height:30vh}
+  .btn-area{padding:6px}
+  .btn{min-height:34px;font-size:11px}
+  .btn-num{font-size:14px}
+  .display-area::before{top:-80%;right:-30%}
+}
+@media(max-width:480px){
+  .display-area{padding:8px;max-height:26vh}
+  .expr-in{font-size:14px}
+  .expr-out{font-size:22px}
+  .btn{min-height:30px;font-size:9px;padding:3px 5px}
+  .btn-num{font-size:12px}
+  .drawer{width:100%}
+  .fl-steps{flex-direction:column;align-items:center}
+}
+@media(min-width:1400px){
+  .btn{min-height:46px;font-size:13px}
+  .btn-num{font-size:16px}
+  .display-area{min-width:300px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-logo">NovaCalc</div>
+  <div class="splash-sub">Scientific Calculator 2026</div>
+  <div class="splash-dots"><div class="splash-dot"></div><div class="splash-dot"></div><div class="splash-dot"></div><div class="splash-dot"></div></div>
+  <div class="splash-ver">v1.0.0</div>
+</div>
+
+<div id="loader">
+  <div class="loader-track"><div class="loader-bar" id="loaderBar"></div></div>
+  <div class="loader-lbl" id="loaderLbl">Initializing...</div>
+  <div class="loader-step" id="loaderStep">Loading modules</div>
+</div>
+
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-l">
+      <div class="topbar-title"><span>NovaCalc</span></div>
+      <span class="topbar-badge">v1.0</span>
+    </div>
+    <nav class="topbar-actions">
+      <button class="topbar-btn" id="btnUndo" aria-label="Undo" title="Undo (Ctrl+Z)"><svg class="icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+      <button class="topbar-btn" id="btnRedo" aria-label="Redo" title="Redo (Ctrl+Y)"><svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+      <button class="topbar-btn" id="btnHistory" aria-label="History" title="History"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
+      <button class="topbar-btn" id="btnHelp" aria-label="Help" title="Help"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+      <button class="topbar-btn" id="btnSettings" aria-label="Settings" title="Settings"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="topbar-btn" id="btnAbout" aria-label="About" title="About"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></button>
+    </nav>
+  </header>
+
+  <main class="calc-wrap">
+    <!-- Left: Display -->
+    <section class="display-area" aria-label="Display">
+      <span class="mem-badge" id="memBadge">M</span>
+      <div class="mode-strip">
+        <span class="mode-chip tog" id="modDeg"><span class="mode-dot deg"></span>DEG</span>
+        <span class="mode-chip tog" id="modRad"><span class="mode-dot rad"></span>RAD</span>
+        <span class="mode-chip tog" id="mod2nd">2nd</span>
+      </div>
+      <div class="expr-area">
+        <div class="expr-sub" id="exprSub"></div>
+        <div class="expr-in" id="exprIn" aria-live="polite">0</div>
+        <div class="expr-out" id="exprOut" aria-live="assertive"></div>
+      </div>
+    </section>
+
+    <!-- Right: Buttons -->
+    <section class="btn-area" aria-label="Buttons" role="group">
+      <!-- Row 1: Memory -->
+      <div class="btn-row">
+        <button class="btn btn-me" data-a="mc">MC</button>
+        <button class="btn btn-me" data-a="mr">MR</button>
+        <button class="btn btn-me" data-a="mplus">M+</button>
+        <button class="btn btn-me" data-a="mminus">M−</button>
+        <button class="btn btn-me" data-a="ms">MS</button>
+        <button class="btn btn-me" data-a="mem">M▾</button>
+      </div>
+      <!-- Row 2: Trig -->
+      <div class="btn-row">
+        <button class="btn btn-fn" data-a="sin">sin</button>
+        <button class="btn btn-fn" data-a="cos">cos</button>
+        <button class="btn btn-fn" data-a="tan">tan</button>
+        <button class="btn btn-fn" data-a="sinh">sinh</button>
+        <button class="btn btn-fn" data-a="cosh">cosh</button>
+        <button class="btn btn-fn" data-a="tanh">tanh</button>
+      </div>
+      <!-- Row 3: Inverse Trig + Advance -->
+      <div class="btn-row">
+        <button class="btn btn-fn" data-a="asin">sin⁻¹</button>
+        <button class="btn btn-fn" data-a="acos">cos⁻¹</button>
+        <button class="btn btn-fn" data-a="atan">tan⁻¹</button>
+        <button class="btn btn-fn" data-a="fact">x!</button>
+        <button class="btn btn-fn" data-a="percent">%</button>
+        <button class="btn btn-fn" data-a="inv">1/x</button>
+      </div>
+      <!-- Row 4: Log + Constants -->
+      <div class="btn-row">
+        <button class="btn btn-lg" data-a="log">log</button>
+        <button class="btn btn-lg" data-a="ln">ln</button>
+        <button class="btn btn-lg" data-a="exp10">10ˣ</button>
+        <button class="btn btn-lg" data-a="exp">eˣ</button>
+        <button class="btn btn-cn" data-a="euler">e</button>
+        <button class="btn btn-cn" data-a="pi">π</button>
+      </div>
+      <!-- Row 5: Power / Root -->
+      <div class="btn-row">
+        <button class="btn btn-pw" data-a="sqr">x²</button>
+        <button class="btn btn-pw" data-a="cube">x³</button>
+        <button class="btn btn-pw" data-a="pow">xʸ</button>
+        <button class="btn btn-pw" data-a="sqrt">√</button>
+        <button class="btn btn-pw" data-a="cbrt">∛</button>
+        <button class="btn btn-pw" data-a="ysqrt">ʸ√x</button>
+      </div>
+      <!-- Row 6: Parens + Misc -->
+      <div class="btn-row">
+        <button class="btn btn-op" data-a="lparen">(</button>
+        <button class="btn btn-op" data-a="rparen">)</button>
+        <button class="btn btn-op" data-a="abs">|x|</button>
+        <button class="btn btn-op" data-a="mod">Mod</button>
+        <button class="btn btn-op" data-a="rand">Rand</button>
+        <button class="btn btn-op" data-a="sign">±</button>
+      </div>
+      <!-- Row 7: 7 8 9 / ÷ BS -->
+      <div class="btn-row">
+        <button class="btn btn-lg" data-a="expEE">Exp</button>
+        <button class="btn btn-cn" data-a="ans">Ans</button>
+        <button class="btn btn-num" data-a="7">7</button>
+        <button class="btn btn-num" data-a="8">8</button>
+        <button class="btn btn-num" data-a="9">9</button>
+        <button class="btn btn-op" data-a="divide">÷</button>
+        <button class="btn btn-bs" data-a="bksp">⌫</button>
+      </div>
+      <!-- Row 8: 4 5 6 × CE -->
+      <div class="btn-row">
+        <button class="btn btn-pw" data-a="square">x²</button>
+        <button class="btn btn-pw" data-a="sqrt">√</button>
+        <button class="btn btn-num" data-a="4">4</button>
+        <button class="btn btn-num" data-a="5">5</button>
+        <button class="btn btn-num" data-a="6">6</button>
+        <button class="btn btn-op" data-a="multiply">×</button>
+        <button class="btn btn-clr" data-a="ce">CE</button>
+      </div>
+      <!-- Row 9: 1 2 3 − C -->
+      <div class="btn-row">
+        <button class="btn btn-fn" data-a="drg">DRG▾</button>
+        <button class="btn btn-cn" data-a="hyp">Hyp</button>
+        <button class="btn btn-num" data-a="1">1</button>
+        <button class="btn btn-num" data-a="2">2</button>
+        <button class="btn btn-num" data-a="3">3</button>
+        <button class="btn btn-op" data-a="subtract">−</button>
+        <button class="btn btn-clr" data-a="clear">C</button>
+      </div>
+      <!-- Row 10: 0 . + = -->
+      <div class="btn-row">
+        <button class="btn btn-fn" data-a="2nd">2nd</button>
+        <button class="btn btn-cn" data-a="const">π</button>
+        <button class="btn btn-num" data-a="0">0</button>
+        <button class="btn btn-num" data-a="decimal">.</button>
+        <button class="btn btn-op" data-a="add">+</button>
+        <button class="btn btn-eq" data-a="equals">=</button>
+        <button style="flex:none;width:auto;padding:0 12px" class="btn btn-me" data-a="mc">MC</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="info-bar">
+    <div class="info-bar-l">
+      <span id="sAngle">DEG</span>
+      <span id="sMem" style="display:none">M</span>
+      <span id="s2nd" style="display:none">2nd</span>
+      <span class="ad" style="padding:2px 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg> Ad</span>
+    </div>
+    <div class="info-bar-r">
+      <span>NovaCalc</span>
+      <span id="sTime"></span>
+    </div>
+  </div>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
+<aside class="drawer" id="historyDrawer">
+  <div class="drawer-head">
+    <h2 class="drawer-title">History</h2>
+    <div style="display:flex;gap:6px">
+      <button class="topbar-btn" id="btnHistClear" aria-label="Clear history"><svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+      <button class="topbar-btn" id="btnHistClose" aria-label="Close"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  </div>
+  <div class="drawer-body" id="histBody"></div>
+</aside>
+
+<!-- Help Modal -->
+<div class="modal-overlay" id="helpModal"><div class="modal" role="dialog">
+  <div class="modal-head"><h2 class="modal-title">Help & Shortcuts</h2><button class="modal-close" id="closeHelp"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="modal-body help">
+    <div class="help-s"><h3>Keyboard Shortcuts</h3>
+      <p><kbd>0-9</kbd> Digits · <kbd>.</kbd> Decimal · <kbd>+</kbd> <kbd>-</kbd> <kbd>*</kbd> <kbd>/</kbd> Ops</p>
+      <p><kbd>Enter</kbd>/<kbd>=</kbd> Calculate · <kbd>Esc</kbd> Clear · <kbd>Del</kbd> CE</p>
+      <p><kbd>Backspace</kbd> Delete · <kbd>(</kbd> <kbd>)</kbd> Parens</p>
+      <p><kbd>S</kbd> sin · <kbd>C</kbd> cos · <kbd>T</kbd> tan · <kbd>L</kbd> log · <kbd>N</kbd> ln</p>
+      <p><kbd>Ctrl+Z</kbd> Undo · <kbd>Ctrl+Y</kbd> Redo</p>
+    </div>
+    <div class="help-s"><h3>Functions</h3>
+      <p><strong>Trig:</strong> sin, cos, tan, sinh, cosh, tanh, sin⁻¹, cos⁻¹, tan⁻¹</p>
+      <p><strong>Log:</strong> log, ln, 10ˣ, eˣ</p>
+      <p><strong>Power:</strong> x², x³, xʸ, √, ∛, ʸ√x</p>
+      <p><strong>Other:</strong> x!, 1/x, |x|, Mod, Exp, Rand, π, e</p>
+    </div>
+    <div class="help-s"><h3>Memory</h3><p><kbd>MC</kbd> Clear · <kbd>MR</kbd> Recall · <kbd>M+</kbd> Add · <kbd>M−</kbd> Sub · <kbd>MS</kbd> Store</p></div>
+    <div class="help-s"><h3>Mode</h3><p><strong>Deg/Rad</strong> angle mode · <strong>2nd</strong> toggles inverse functions · <strong>DRG</strong> cycles angle modes</p></div>
+  </div>
+</div></div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal"><div class="modal" role="dialog">
+  <div class="modal-head"><h2 class="modal-title">Settings</h2><button class="modal-close" id="closeSettings"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="modal-body">
+    <div class="set-grp"><div class="set-grp-title">Angle</div>
+      <div class="set-row"><div><div class="set-lbl">Angle Mode</div><div class="set-desc">Degrees or Radians</div></div><select class="sel" id="setAngle"><option value="deg">Degrees</option><option value="rad">Radians</option></select></div>
+    </div>
+    <div class="set-grp"><div class="set-grp-title">Display</div>
+      <div class="set-row"><div><div class="set-lbl">Large Display</div><div class="set-desc">Increase font sizes</div></div><div class="toggle" id="setLarge" tabindex="0" role="switch" aria-checked="false"></div></div>
+      <div class="set-row"><div><div class="set-lbl">Sound Effects</div><div class="set-desc">Button click sounds</div></div><div class="toggle" id="setSound" tabindex="0" role="switch" aria-checked="false"></div></div>
+    </div>
+    <div class="set-grp"><div class="set-grp-title">Session</div>
+      <div class="set-row"><div><div class="set-lbl">Auto-Save History</div><div class="set-desc">Persist calculations</div></div><div class="toggle on" id="setSave" tabindex="0" role="switch" aria-checked="true"></div></div>
+      <div class="set-row"><div><div class="set-lbl">Inactivity Timeout</div><div class="set-desc">Auto-clear after idle</div></div><select class="sel" id="setTimeout"><option value="0">Never</option><option value="300">5 min</option><option value="600" selected>10 min</option><option value="1800">30 min</option></select></div>
+    </div>
+    <div class="ad" style="margin-top:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg> Ad space — Settings</div>
+  </div>
+</div></div>
+
+<!-- About Modal -->
+<div class="modal-overlay" id="aboutModal"><div class="modal" role="dialog">
+  <div class="modal-head"><h2 class="modal-title">About</h2><button class="modal-close" id="closeAbout"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="modal-body">
+    <div class="ab-v">NovaCalc</div>
+    <div class="ab-s">Scientific Calculator 2026</div>
+    <div class="ab-i"><p>Version 1.0.0</p><p>Premium glassmorphism · Landscape optimized</p><p>For students, engineers & professionals</p></div>
+    <div class="ab-c"><p>© 2026 NovaCalc</p></div>
+    <div class="ad" style="margin-top:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg> Ad space — About</div>
+  </div>
+</div></div>
+
+<!-- First Launch -->
+<div class="modal-overlay" id="flModal"><div class="modal" role="dialog">
+  <div class="modal-head"><h2 class="modal-title">Welcome</h2></div>
+  <div class="modal-body">
+    <div class="sp-card">
+      <h2>NovaCalc is Ready</h2>
+      <p>Your futuristic scientific calculator. Click or type to begin.</p>
+      <div class="fl-steps">
+        <div class="fl-step"><div class="fl-sn">1</div><div class="fl-st">Click or Type</div><div class="fl-sd">Enter expressions with buttons or keyboard</div></div>
+        <div class="fl-step"><div class="fl-sn">2</div><div class="fl-st">Press =</div><div class="fl-sd">Or hit Enter to calculate</div></div>
+        <div class="fl-step"><div class="fl-sn">3</div><div class="fl-st">Explore</div><div class="fl-sd">Trig, logs, memory functions & more</div></div>
+      </div>
+      <button class="btn btn-eq" id="btnStart" style="padding:10px 36px;display:inline-flex;font-size:14px;flex:none">Get Started</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- Session Timeout -->
+<div class="modal-overlay" id="timeoutModal"><div class="modal" role="dialog">
+  <div class="modal-body">
+    <div class="sp-card">
+      <h2>Session Expired</h2>
+      <p>Your session timed out due to inactivity. Calculations are saved.</p>
+      <button class="btn btn-eq" id="btnResume" style="padding:10px 36px;display:inline-flex;font-size:14px">Resume</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- Offline -->
+<div class="modal-overlay" id="offlineModal"><div class="modal" role="dialog">
+  <div class="modal-body">
+    <div class="sp-card">
+      <h2>You're Offline</h2>
+      <p>NovaCalc works fully offline. All data is stored locally.</p>
+      <button class="btn btn-eq" id="btnOffOk" style="padding:10px 36px;display:inline-flex;font-size:14px">Continue</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- Error -->
+<div class="modal-overlay" id="errModal"><div class="modal" role="dialog">
+  <div class="modal-body">
+    <div class="sp-card">
+      <h2 style="color:var(--red)">Error</h2>
+      <p id="errMsg">Invalid input</p>
+      <button class="btn btn-clr" id="btnErrOk" style="padding:8px 28px;display:inline-flex;font-size:13px;border:1px solid rgba(255,107,107,.15)">OK</button>
+    </div>
+  </div>
+</div></div>
+
+<div id="toastC"></div>
+
+<script>
+/* ============================================================
+   ENGINE
+   ============================================================ */
+class Calc {
+  constructor() {
+    this.disp = '0';
+    this.res = '';
+    this.sub = '';
+    this.err = false;
+    this.mem = 0;
+    this.hasMem = false;
+    this.hist = [];
+    this.undoS = [];
+    this.redoS = [];
+    this.ang = 'deg';
+    this._2nd = false;
+    this.lastAns = null;
+    this.idleT = null;
+    this.idleTo = 600;
+    this.newE = true;
+    this.pendingOp = null;
+    this.settings = {large:false,sound:false,autoSave:true,idleTo:600};
+    this.load();
+    this.cbs = [];
+  }
+  on(fn){this.cbs.push(fn)}
+  _up(){this.cbs.forEach(f=>f(this))}
+
+  load(){
+    try{const h=localStorage.getItem('nc_hist');if(h)this.hist=JSON.parse(h);
+      const s=localStorage.getItem('nc_set');if(s)this.settings={...this.settings,...JSON.parse(s)};
+      this.idleTo=this.settings.idleTo;
+    }catch(e){}}
+
+  saveHist(){
+    try{localStorage.setItem('nc_hist',JSON.stringify(this.hist.slice(0,100)))}catch(e){}}
+  saveSet(){
+    try{localStorage.setItem('nc_set',JSON.stringify(this.settings))}catch(e){}}
+
+  pushU(){this.undoS.push({d:this.disp,r:this.res,s:this.sub});this.redoS=[]}
+  undo(){
+    if(!this.undoS.length)return;
+    this.redoS.push({d:this.disp,r:this.res,s:this.sub});
+    const x=this.undoS.pop();
+    this.disp=x.d;this.res=x.r;this.sub=x.s;this.err=false;this._up()
+  }
+  redo(){
+    if(!this.redoS.length)return;
+    this.undoS.push({d:this.disp,r:this.res,s:this.sub});
+    const x=this.redoS.pop();
+    this.disp=x.d;this.res=x.r;this.sub=x.s;this.err=false;this._up()
+  }
+
+  addHist(e,r,s){
+    this.hist.unshift({expr:e,result:r,sub:s,time:new Date().toLocaleString(),id:Date.now()});
+    if(this.hist.length>100)this.hist.pop();
+    if(this.settings.autoSave)this.saveHist();
+    this._up()
+  }
+  clrHist(){this.hist=[];this.saveHist();this._up()}
+
+  startIdle(){
+    clearTimeout(this.idleT);
+    if(!this.settings.idleTo)return;
+    this.idleT=setTimeout(()=>document.getElementById('timeoutModal').classList.add('open'),this.settings.idleTo*1000)
+  }
+  resetIdle(){this.startIdle()}
+
+  eval(exp){
+    try{
+      let s=exp.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-')
+        .replace(/π/g,`(${Math.PI})`)
+        .replace(/²/g,'**2').replace(/³/g,'**3')
+        .replace(/%/g,'/100');
+      // Close parens
+      const o=(s.match(/\(/g)||[]).length,c=(s.match(/\)/g)||[]).length;
+      for(let i=0;i<o-c;i++)s+=')';
+      const scope={
+        sin:x=>Math.sin(this.ang==='deg'?x*Math.PI/180:x),
+        cos:x=>Math.cos(this.ang==='deg'?x*Math.PI/180:x),
+        tan:x=>Math.tan(this.ang==='deg'?x*Math.PI/180:x),
+        asin:x=>{const r=Math.asin(x);return this.ang==='deg'?r*180/Math.PI:r},
+        acos:x=>{const r=Math.acos(x);return this.ang==='deg'?r*180/Math.PI:r},
+        atan:x=>{const r=Math.atan(x);return this.ang==='deg'?r*180/Math.PI:r},
+        sinh:Math.sinh,cosh:Math.cosh,tanh:Math.tanh,
+        log:Math.log10,ln:Math.log,sqrt:Math.sqrt,cbrt:Math.cbrt,
+        abs:Math.abs,exp:Math.exp,rand:Math.random,
+        fact:function f(n){return n<=1?1:n*f(n-1)},
+      };
+      // Transform function calls
+      ['sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','log','ln','sqrt','cbrt','abs','exp','rand','fact'].forEach(f=>{
+        s=s.replace(new RegExp(`\\b${f}\\s*\\(?\\s*(\\d*\\.?\\d+)`,'g'),`scope.${f}($1)`)
+      });
+      s=s.replace(/\|([^|]+)\|/g,'scope.abs($1)');
+      s=s.replace(/(\d+)!/g,'scope.fact($1)');
+      s=s.replace(/e\^/g,'scope.exp(');
+      s=s.replace(/\b10\^/g,'1e');
+
+      const val=Function('scope','"use strict";return ('+s+')')(scope);
+      if(typeof val!=='number')throw Error('NaN');
+      if(!isFinite(val))return{val,inf:true};
+      return{val,inf:false};
+    }catch(e){return{err:e.message||'Error'}}
+  }
+
+  fmt(n){
+    if(Math.abs(n)>1e15||(Math.abs(n)<1e-10&&n!==0))return n.toExponential(10).replace(/\.?0+e/,'e');
+    return String(parseFloat(n.toPrecision(12)));
+  }
+}
+
+const C=new Calc();
+let D='0',R='',pendingOp=null,newE=true,lastRes=null;
+
+const $=id=>document.getElementById(id);
+const iI=$('exprIn'),iO=$('exprOut'),iS=$('exprSub'),mB=$('memBadge');
+const sA=$('sAngle'),sM=$('sMem'),s2=$('s2nd');
+
+function upd(){
+  iI.textContent=D||'0';
+  if(!C.err){iO.textContent=R;iO.className='expr-out';}
+  else{iO.textContent=R||'Error';iO.className='expr-out error';}
+  mB.classList.toggle('show',C.hasMem);
+  sM.style.display=C.hasMem?'inline':'none';
+  s2.style.display=C._2nd?'inline':'none';
+  sA.textContent=C.ang.toUpperCase();
+  $('modDeg').classList.toggle('active',C.ang==='deg');
+  $('modRad').classList.toggle('active',C.ang==='rad');
+  $('mod2nd').classList.toggle('active',C._2nd);
+}
+C.on(upd);
+
+function action(a){
+  C.resetIdle();
+  const nE=newE;
+  const oMap={add:'+',subtract:'−',multiply:'×',divide:'÷',mod:'Mod'};
+
+  switch(a){
+    case '0':case'1':case'2':case'3':case'4':case'5':case'6':case'7':case'8':case'9':
+      if(newE){D=a;newE=false}else D+=a;break;
+    case 'decimal':
+      if(newE){D='0.';newE=false}
+      else if(!D.includes('.'))D+='.';break;
+    case 'add':case'subtract':case'multiply':case'divide':case'mod':
+      if(!newE&&pendingOp)evalCalc();
+      if(newE&&D.endsWith(' '))D=D.slice(0,-3);
+      pendingOp=oMap[a];D+=' '+oMap[a]+' ';newE=true;break;
+    case 'equals':evalCalc();break;
+    case 'clear':D='0';R='';C.sub='';pendingOp=null;newE=true;C.err=false;lastRes=null;break;
+    case 'ce':D='0';newE=true;break;
+    case 'bksp':D=D.length>1?D.slice(0,-1):'0';break;
+    case 'lparen':D+='(';newE=false;break;
+    case 'rparen':D+=')';newE=false;break;
+    case 'sign':
+      if(D.startsWith('−'))D=D.slice(1);
+      else if(D.startsWith('-'))D=D.slice(1);
+      else D='−'+D;break;
+
+    // Scientific
+    case 'sin':case'cos':case'tan':case'sinh':case'cosh':case'tanh':
+    case 'asin':case'acos':case'atan':
+    case 'log':case'ln':case'sqrt':case'cbrt':case'abs':
+      const fnDisp={asin:'sin⁻¹',acos:'cos⁻¹',atan:'tan⁻¹',cbrt:'∛',sqrt:'√',abs:'|x|'};
+      const dN=fnDisp[a]||a;
+      if(newE||D==='0'){D=dN+'(';newE=false}else D+=dN+'(';break;
+    case 'sqr':D+='²';break;
+    case 'cube':D+='³';break;
+    case 'pow':D+=' ^ ';newE=false;break;
+    case 'ysqrt':D+='√(';break;
+    case 'exp10':D+='10^';break;
+    case 'exp':D+='e^';break;
+    case 'euler':D+='e';break;
+    case 'pi':D+='π';break;
+    case 'inv':if(D!=='0')D='1/('+D+')';break;
+    case 'fact':D+='!';break;
+    case 'percent':
+      try{const v=evalSilent();D=String(v/100);newE=true}catch(e){D+='%'};break;
+    case 'square':
+      try{const v=evalSilent();D=String(v*v);newE=true}catch(e){D+='²'};break;
+    case 'rand':D=String(Math.random());newE=true;break;
+    case 'expEE':D+='E';break;
+    case 'ans':if(lastRes!==null)D+=String(lastRes);break;
+
+    // Memory
+    case 'mc':C.mem=0;C.hasMem=false;toast('Memory cleared','info');break;
+    case 'mr':if(C.hasMem){if(newE){D=String(C.mem);newE=false}else D+=String(C.mem)}break;
+    case 'mplus':try{const v=evalSilent();C.mem+=v;C.hasMem=true;toast('Added to memory','info')}catch(e){}break;
+    case 'mminus':try{const v=evalSilent();C.mem-=v;C.hasMem=true;toast('Subtracted','info')}catch(e){}break;
+    case 'ms':try{const v=evalSilent();C.mem=v;C.hasMem=true;toast('Stored to memory','info')}catch(e){}break;
+    case 'mem':toast('Memory: '+(C.hasMem?C.mem:'empty'),'info');break;
+
+    // Mode
+    case '2nd':C._2nd=!C._2nd;upd();break;
+    case 'deg':C.ang='deg';$('setAngle').value='deg';upd();$('modDeg').blur();break;
+    case 'rad':C.ang='rad';$('setAngle').value='rad';upd();$('modRad').blur();break;
+    case 'drg':C.ang=C.ang==='deg'?'rad':'deg';$('setAngle').value=C.ang;upd();break;
+    case 'hyp':toast('Hyperbolic active','info');break;
+    case 'const':D+='π';break;
+  }
+
+  // Live preview
+  try{const p=evalSilent();if(typeof p==='number'&&isFinite(p)){R=C.fmt(p);C.sub='= '+R;C.err=false}}catch(e){}
+  upd();
+}
+
+function evalCalc(){
+  C.pushU();
+  try{
+    C.sub=D;
+    const r=evalSilent();
+    if(typeof r==='number'&&isFinite(r)){
+      R=C.fmt(r);C.err=false;lastRes=r;
+      C.addHist(D,R,'');
+      newE=true;pendingOp=null;D=R;
+    }else if(!isFinite(r)){R='Infinity';C.err=true}
+  }catch(e){R='Error';C.err=true}
+  upd();
+}
+
+function evalSilent(){
+  let s=D.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-')
+    .replace(/π/g,`(${Math.PI})`).replace(/²/g,'**2').replace(/³/g,'**3')
+    .replace(/%/g,'/100').replace(/\|/g,'').trim();
+  const o=(s.match(/\(/g)||[]).length,c=(s.match(/\)/g)||[]).length;
+  for(let i=0;i<o-c;i++)s+=')';
+  s=s.replace(/(\d+)!/g,'fact($1)');
+  const scope={
+    sin:x=>Math.sin(C.ang==='deg'?x*Math.PI/180:x),
+    cos:x=>Math.cos(C.ang==='deg'?x*Math.PI/180:x),
+    tan:x=>Math.tan(C.ang==='deg'?x*Math.PI/180:x),
+    asin:x=>{const r=Math.asin(x);return C.ang==='deg'?r*180/Math.PI:r},
+    acos:x=>{const r=Math.acos(x);return C.ang==='deg'?r*180/Math.PI:r},
+    atan:x=>{const r=Math.atan(x);return C.ang==='deg'?r*180/Math.PI:r},
+    sinh:Math.sinh,cosh:Math.cosh,tanh:Math.tanh,
+    log:Math.log10,ln:Math.log,sqrt:Math.sqrt,cbrt:Math.cbrt,
+    abs:Math.abs,exp:Math.exp,rand:Math.random,
+    fact:function f(n){return n<=1?1:n*f(n-1)},
+  };
+  const fns=['sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','log','ln','sqrt','cbrt','abs','exp','rand','fact'];
+  fns.forEach(f=>{s=s.replace(new RegExp('\\b'+f+'\\s*\\(','g'),'scope.'+f+'(')});
+  return Function('scope','"use strict";return ('+s+')')(scope);
+}
+
+function toast(m, t='info'){
+  const c=$('toastC');const e=document.createElement('div');
+  e.className='toast '+t;e.textContent=m;
+  c.appendChild(e);
+  setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300)},2000);
+}
+
+function fmtNum(n){
+  if(Math.abs(n)>1e15||(Math.abs(n)<1e-10&&n!==0))return n.toExponential(10).replace(/\.?0+e/,'e');
+  return String(parseFloat(n.toPrecision(12)));
+}
+
+/* History */
+function renderHist(){
+  const b=$('histBody');
+  if(!C.hist.length){b.innerHTML='<div class="hist-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><p>No calculations yet</p></div>';return}
+  b.innerHTML=C.hist.map(h=>`<div class="hist-item" data-e="${h.expr.replace(/"/g,'&quot;')}" data-r="${h.result}">
+    <div class="hist-expr">${h.expr}</div><div class="hist-res">= ${h.result}</div>
+    <div class="hist-time">${h.time}</div></div>`).join('');
+  b.querySelectorAll('.hist-item').forEach(el=>{
+    el.addEventListener('click',()=>{D=el.dataset.e;R=el.dataset.r;newE=true;upd();closeDrawer()})
+  });
+}
+C.on(renderHist);
+
+/* Nav */
+function openDrawer(id){$(id).classList.add('open');$('drawerOverlay').classList.add('open')}
+function closeDrawer(){document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'));$('drawerOverlay').classList.remove('open')}
+function openModal(id){$(id).classList.add('open')}
+function closeModal(id){$(id).classList.remove('open')}
+
+$('btnHistory').addEventListener('click',()=>{renderHist();openDrawer('historyDrawer')});
+$('btnHistClose').addEventListener('click',closeDrawer);
+$('btnHistClear').addEventListener('click',()=>{C.clrHist();toast('History cleared','info')});
+$('drawerOverlay').addEventListener('click',closeDrawer);
+$('btnHelp').addEventListener('click',()=>openModal('helpModal'));
+$('closeHelp').addEventListener('click',()=>closeModal('helpModal'));
+$('btnSettings').addEventListener('click',()=>openModal('settingsModal'));
+$('closeSettings').addEventListener('click',()=>closeModal('settingsModal'));
+$('btnAbout').addEventListener('click',()=>openModal('aboutModal'));
+$('closeAbout').addEventListener('click',()=>closeModal('aboutModal'));
+$('btnStart').addEventListener('click',()=>closeModal('flModal'));
+$('btnResume').addEventListener('click',()=>closeModal('timeoutModal'));
+$('btnOffOk').addEventListener('click',()=>closeModal('offlineModal'));
+$('btnErrOk').addEventListener('click',()=>closeModal('errModal'));
+$('modDeg').addEventListener('click',()=>{C.ang='deg';$('setAngle').value='deg';upd();$('modDeg').blur();toast('Degree mode','info')});
+$('modRad').addEventListener('click',()=>{C.ang='rad';$('setAngle').value='rad';upd();$('modRad').blur();toast('Radian mode','info')});
+$('mod2nd').addEventListener('click',()=>{C._2nd=!C._2nd;upd();toast(C._2nd?'2nd functions active':'Normal mode','info')});
+
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')})
+});
+
+/* Settings */
+$('setAngle').addEventListener('change',e=>{C.ang=e.target.value;upd()});
+$('setLarge').addEventListener('click',function(){this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))});
+$('setSound').addEventListener('click',function(){this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))});
+$('setSave').addEventListener('click',function(){this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'));C.settings.autoSave=this.classList.contains('on');C.saveSet()});
+$('setTimeout').addEventListener('change',e=>{C.settings.idleTo=parseInt(e.target.value);C.saveSet();C.startIdle()});
+document.querySelectorAll('.toggle').forEach(t=>{t.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();t.click()}})});
+
+/* Keyboard */
+const keyMap={
+  '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
+  '.':'decimal','Enter':'equals','=':'equals','Escape':'clear','Delete':'ce',
+  'Backspace':'bksp','(':'lparen',')':'rparen',
+  '+':'add','-':'subtract','*':'multiply','/':'divide',
+  's':'sin','c':'cos','t':'tan','l':'log','n':'ln',
+  'p':'pi','e':'euler','r':'rand','!':'fact','%':'percent',
+  '^':'pow','q':'sqr','w':'sqrt',
+};
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='z'){e.preventDefault();C.undo();return}
+  if(e.ctrlKey&&e.key==='y'){e.preventDefault();C.redo();return}
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const a=keyMap[e.key];if(a){e.preventDefault();action(a)}
+});
+
+/* Button clicks */
+document.querySelectorAll('.btn-area .btn').forEach(b=>{
+  b.addEventListener('click',()=>{const a=b.dataset.a;if(a)action(a)})
+});
+$('btnUndo').addEventListener('click',()=>C.undo());
+$('btnRedo').addEventListener('click',()=>C.redo());
+
+/* Time */
+function updTime(){$('sTime').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+setInterval(updTime,30000);updTime();
+
+/* Boot */
+function boot(){
+  setTimeout(()=>{
+    $('splash').classList.add('hide');
+    const bar=$('loaderBar'),lbl=$('loaderLbl'),step=$('loaderStep');
+    const steps=[
+      {p:15,l:'Initializing engine...',s:'Loading modules'},
+      {p:30,l:'Loading UI components...',s:'Building interface'},
+      {p:45,l:'Configuring display...',s:'Setting up display'},
+      {p:60,l:'Loading functions...',s:'30+ scientific functions'},
+      {p:75,l:'Preparing storage...',s:'Memory & history'},
+      {p:90,l:'Finalizing...',s:'Almost ready'},
+      {p:100,l:'Ready!',s:'Launching...'},
+    ];
+    let i=0;
+    const iv=setInterval(()=>{if(i>=steps.length){clearInterval(iv);return}
+      const s=steps[i];bar.style.width=s.p+'%';lbl.textContent=s.l;step.textContent=s.s;i++
+    },200);
+    setTimeout(()=>{
+      clearInterval(iv);bar.style.width='100%';
+      $('loader').classList.add('hide');$('app').classList.add('active');
+      upd();
+      if(!localStorage.getItem('nc_fl')){openModal('flModal');localStorage.setItem('nc_fl','1')}
+      if(!navigator.onLine)setTimeout(()=>openModal('offlineModal'),500);
+      C.startIdle();
+      document.addEventListener('click',()=>C.resetIdle());
+      document.addEventListener('keydown',()=>C.resetIdle());
+    },1800);
+  },1400);
+}
+boot();
+</script>
+</body>
+</html>
